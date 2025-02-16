@@ -103,14 +103,13 @@ jobs:
       run: |
         cd build && ninja
     
-    - name: 获取 "libcrypto-1_1-x64.dll"
-      shell: bash 
-      run: |
-        GITHUB_REPOSITORY="${{ github.repository }}"
-        REPO_NAME="${GITHUB_REPOSITORY#${{ github.repository_owner }}/}"
-
-        curl -L -o D:/a/$REPO_NAME/$REPO_NAME/build/bin/libcrypto-1_1-x64.dll https://github.com/xiaouex/aseprite-builder-2/releases/download/openssl/libcrypto-1_1-x64.dll
-
+    - name: 获取libcrypto-1_1-x64.dll
+      uses: robinraju/release-downloader@v1
+      with:
+         repository: 'feekcom/libopenssl'
+         tag: 'release'
+         fileName: 'crypto-x86_64-pc-windows-msvc.dll '
+         
     # # 为了遵守 Aseprite 的 EULA, 请确保仓库为私有再启用该功能
     # - name: 上传文件到 artifact
     #   uses: actions/upload-artifact@v3
