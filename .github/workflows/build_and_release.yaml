@@ -11,38 +11,25 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  fetch-aseprite-info:
-    name: Fetch deps info
-    runs-on: ubuntu-latest
-    outputs:
-      download-link: ${{ steps.aseprite-link.outputs.download-link }}
-      release-tag: ${{ steps.aseprite-link.outputs.release-tag }}
-    steps:
-      - name: Fetch Aseprite release link
-        id: aseprite-link
-        uses: a1393323447/fetch-release@main
-        with:
-            group: aseprite
-            repo: aseprite
-            match: Aseprite-.*?-Source.zip
-
   create-release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: fetch-aseprite-info
     permissions:
       contents: write
     outputs:
-      download-link: ${{ needs.fetch-aseprite-info.outputs.download-link }}
-      release-tag: ${{ needs.fetch-aseprite-info.outputs.release-tag }}
+      release-tag: ${{ steps.release.outputs.release-tag }}
     steps:
       - uses: actions/checkout@v2
-      - uses: ncipollo/release-action@v1
+      - name: Create Release
+        id: release
+        uses: ncipollo/release-action@v1
         with:
-          tag: ${{ needs.fetch-aseprite-info.outputs.release-tag }}
-          body: Aseprite-${{ needs.fetch-aseprite-info.outputs.release-tag }}
+          tag: "latest-${{ github.sha }}"
+          body: "Aseprite build from latest commit: ${{ github.sha }}"
           skipIfReleaseExists: true
           token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-aseprite:
     name: Build Aseprite
@@ -51,9 +38,9 @@ jobs:
       contents: write
     runs-on: ${{ matrix.os }}
     strategy:
-        matrix:
-          os: [ windows-latest, ubuntu-latest, macOS-latest ]
-        fail-fast: false
+      matrix:
+        os: [windows-latest]
+      fail-fast: false
     steps:
       - name: Install Dependencies
         if: runner.os == 'Linux'
@@ -63,11 +50,16 @@ jobs:
           sudo apt-get install -y \
             libpixman-1-dev libfreetype6-dev libharfbuzz-dev zlib1g-dev \
             libx11-dev libxcursor-dev libxi-dev libgl1-mesa-dev libfontconfig1-dev
+
       - uses: actions/checkout@v4
+
       - name: Install Aseprite
         shell: bash
         run: |
-          git clone --recurse-submodules -j8 https://github.com/aseprite/aseprite --branch ${{ needs.create-release.outputs.release-tag }}
+          git clone --recurse-submodules -j8 https://github.com/aseprite/aseprite.git
+          cd aseprite
+          git checkout ${{ needs.create-release.outputs.release-tag }}
+
       - name: Install Skia
         working-directory: aseprite
         shell: bash
@@ -83,9 +75,12 @@ jobs:
             wget https://github.com/aseprite/skia/releases/download/m124-08a5439a6b/Skia-Linux-Release-x64.zip
             unzip Skia-Linux-Release-x64.zip -d skia
           fi
+
       - uses: aseprite/get-ninja@main
+
       - uses: ilammy/msvc-dev-cmd@v1
         if: runner.os == 'Windows'
+
       - name: Generating Makefiles
         shell: bash
         working-directory: aseprite
@@ -110,25 +105,32 @@ jobs:
             -DSKIA_DIR=$(realpath skia) \
             -DOPENSSL_USE_STATIC_LIBS=ON \
             -DSKIA_LIBRARY_DIR=$(realpath skia/out/Release-$skia_arch)
+
       - name: Compiling
         shell: bash
         working-directory: aseprite
         run: |
           cd build && ninja
+
       - name: Clean Up Build folder
         working-directory: aseprite/build/bin
         shell: bash
-        run: find . -mindepth 1 ! \( -name 'aseprite' -o -name 'aseprite.exe' -o -name 'data' -prune \) -exec rm -rf {} +
+        run: |
+          find . -mindepth 1 !  $ -name 'aseprite' -o -name 'aseprite.exe' -o -name 'data' -prune $ -exec rm -rf {} +
+
       - name: Make portable zip
         working-directory: aseprite/build/bin
         run: echo '# This file is here so Aseprite behaves as a portable program' > aseprite.ini
+
       - name: Create release
         working-directory: aseprite/build/bin
         run: 7z -tzip a Aseprite-${{ needs.create-release.outputs.release-tag }}-${{ runner.os }}.zip *
+
       - name: Upload release
         uses: svenstaro/upload-release-action@v2
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: aseprite/build/bin/Aseprite-${{ needs.create-release.outputs.release-tag }}-${{ runner.os }}.zip
-          asset_name: Aseprite-${{ needs.create-release.outputs.release-tag }}-${{ runner.os }}.zip
-          tag: ${{ needs.create-release.outputs.release-tag }}
+         repo_token: ${{ secrets.GITHUB_TOKEN }}
+         file: aseprite/build/bin/Aseprite-${{ needs.create-release.outputs.release-tag }}-${{ runner.os }}.zip
+         asset_name: Aseprite-${{ needs.create-release.outputs.release-tag }}-${{ runner.os }}.zip
+         tag: Aseprite-${{ formatDateTime(utcNow(), 'yyyy-MM-ddTHH') }}
+
