@@ -17,7 +17,7 @@ jobs:
     permissions:
       contents: write
     outputs:
-      release-tag: Aseprite-${{ github.sha }}
+      release-tag: ${{ steps.release.outputs.release-tag }}
     steps:
       - uses: actions/checkout@v2
       - name: Create Release
@@ -30,7 +30,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
 
   build-aseprite:
     name: Build Aseprite
@@ -117,8 +116,8 @@ jobs:
         working-directory: aseprite/build/bin
         shell: bash
         run: |
-          find . -mindepth 1 ! \( -name 'aseprite' -o -name 'aseprite.exe' -o -name 'data' -prune \) -exec rm -rf {} +
-          
+          find . -mindepth 1 !  $ -name 'aseprite' -o -name 'aseprite.exe' -o -name 'data' -prune $ -exec rm -rf {} +
+
       - name: Make portable zip
         working-directory: aseprite/build/bin
         run: echo '# This file is here so Aseprite behaves as a portable program' > aseprite.ini
@@ -130,7 +129,8 @@ jobs:
       - name: Upload release
         uses: svenstaro/upload-release-action@v2
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: aseprite/build/bin/Aseprite-${{ needs.create-release.outputs.release-tag }}-${{ runner.os }}.zip
-          asset_name: Aseprite-${{ needs.create-release.outputs.release-tag }}-${{ runner.os }}.zip
-          tag: ${{ needs.create-release.outputs.release-tag }}
+         repo_token: ${{ secrets.GITHUB_TOKEN }}
+         file: aseprite/build/bin/Aseprite-${{ needs.create-release.outputs.release-tag }}-${{ runner.os }}.zip
+         asset_name: Aseprite-${{ needs.create-release.outputs.release-tag }}-${{ runner.os }}.zip
+         tag: Aseprite-${{ formatDateTime(utcNow(), 'yyyy-MM-ddTHH') }}
+
