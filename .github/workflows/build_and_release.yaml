@@ -17,7 +17,7 @@ jobs:
     permissions:
       contents: write
     outputs:
-      release-tag: ${{ steps.release.outputs.release-tag }}
+      release-tag: Aseprite-${{ github.sha }}
     steps:
       - uses: actions/checkout@v2
       - name: Create Release
@@ -30,6 +30,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
 
   build-aseprite:
     name: Build Aseprite
@@ -39,7 +40,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macOS-latest]
+        os: [windows-latest]
       fail-fast: false
     steps:
       - name: Install Dependencies
