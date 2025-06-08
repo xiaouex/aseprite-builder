@@ -131,5 +131,5 @@ jobs:
          repo_token: ${{ secrets.GITHUB_TOKEN }}
          file: aseprite/build/bin/Aseprite-${{ needs.create-release.outputs.release-tag }}-${{ runner.os }}.zip
          asset_name: Aseprite-${{ needs.create-release.outputs.release-tag }}-${{ runner.os }}.zip
-         tag: "Aseprite-%Y.%m.%d-%H%M"
+         tag: Aseprite-latest
 
